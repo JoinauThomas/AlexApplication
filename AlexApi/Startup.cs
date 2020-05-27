@@ -26,6 +26,9 @@ namespace AlexApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+
+            services.AddIdentityServer()
+               .AddDeveloperSigningCredential();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -35,6 +38,8 @@ namespace AlexApi
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseIdentityServer();
 
             app.UseHttpsRedirection();
 
