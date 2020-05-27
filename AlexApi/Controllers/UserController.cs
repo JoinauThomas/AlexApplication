@@ -14,9 +14,9 @@ namespace AlexApi.Controllers
     public class UserController : ControllerBase
     {
         [HttpGet]
-        [Route("Get")]
+        [Route("GetClaims")]
         [Authorize]
-        public IActionResult Get()
+        public IActionResult GetClaims()
         {
             return new JsonResult(from c in User.Claims select new { c.Type, c.Value });
         }

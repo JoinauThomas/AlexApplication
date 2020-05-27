@@ -26,8 +26,7 @@ namespace AlexApi.Config
                     ClientId = "client",
 
                     //Definition du type de client
-                    AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
-                    AllowOfflineAccess = true,
+                    AllowedGrantTypes = GrantTypes.ClientCredentials,
 
                     //Definition de la SecretKey
                     ClientSecrets =
@@ -36,7 +35,7 @@ namespace AlexApi.Config
                     },
 
                     //Contexte auquel le client peut acceder
-                    AllowedScopes = { IdentityServerConstants.StandardScopes.OfflineAccess, "api1"}
+                    AllowedScopes = { "api1"}
                 }
             };
         }
