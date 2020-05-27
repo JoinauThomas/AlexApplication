@@ -28,7 +28,9 @@ namespace AlexApi
             services.AddControllers();
 
             services.AddIdentityServer()
-               .AddDeveloperSigningCredential();
+               .AddDeveloperSigningCredential()
+               .AddInMemoryApiResources(Config.Config.GetApiResources())
+               .AddInMemoryClients(Config.Config.GetClients());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
