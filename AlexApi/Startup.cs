@@ -31,7 +31,8 @@ namespace AlexApi
             services.AddIdentityServer()
                .AddDeveloperSigningCredential()
                .AddInMemoryApiResources(Config.Config.GetApiResources())
-               .AddInMemoryClients(Config.Config.GetClients());
+               .AddInMemoryClients(Config.Config.GetClients())
+               .AddTestUsers(Config.Config.GetUsers());
 
             services.AddAuthorization();
 

@@ -1,5 +1,6 @@
 ﻿using IdentityServer4;
 using IdentityServer4.Models;
+using IdentityServer4.Test;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +27,8 @@ namespace AlexApi.Config
                     ClientId = "client",
 
                     //Definition du type de client
-                    AllowedGrantTypes = GrantTypes.ClientCredentials,
+                    AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
+                    AllowOfflineAccess = true,
 
                     //Definition de la SecretKey
                     ClientSecrets =
@@ -35,7 +37,21 @@ namespace AlexApi.Config
                     },
 
                     //Contexte auquel le client peut acceder
-                    AllowedScopes = { "api1"}
+                    AllowedScopes = { IdentityServerConstants.StandardScopes.OfflineAccess, "api1"}
+                }
+            };
+        }
+
+        // creation d'un user tests en attendant qu'on cree la DB
+        public static List<TestUser> GetUsers()
+        {
+            return new List<TestUser>
+            {
+                new TestUser
+                {
+                    SubjectId = "1",
+                    Username = "test",
+                    Password = "password"
                 }
             };
         }
