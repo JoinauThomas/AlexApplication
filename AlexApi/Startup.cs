@@ -3,10 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using AlexApi.Data;
+using AlexApi.Models;
 using IdentityServer4.AccessTokenValidation;
+using IdentityServer4.EntityFramework.DbContexts;
+using IdentityServer4.EntityFramework.Mappers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -30,11 +35,19 @@ namespace AlexApi
         {
             services.AddControllers();
 
+            services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddIdentity<MyUser, MyRole>()
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
+
             services.AddIdentityServer()
                .AddDeveloperSigningCredential()
-               //.AddInMemoryApiResources(Config.Config.GetApiResources())
-               //.AddInMemoryClients(Config.Config.GetClients())
-               .AddTestUsers(Config.Config.GetUsers())
+                //.AddInMemoryApiResources(Config.Config.GetApiResources())
+                //.AddInMemoryClients(Config.Config.GetClients())
+                //.AddTestUsers(Config.Config.GetUsers())
+                .AddAspNetIdentity<MyUser>()
                .AddConfigurationStore(options =>
                {
                    options.ConfigureDbContext = builder =>
@@ -86,6 +99,60 @@ namespace AlexApi
             {
                 endpoints.MapControllers();
             });
+
+            InitializeDatabase(app);
+        }
+
+        private void InitializeDatabase(IApplicationBuilder app)
+        {
+            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
+
+                var context = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+                context.Database.Migrate();
+                if (!context.Clients.Any())
+                {
+                    foreach (var client in Config.Config.GetClients())
+                    {
+                        context.Clients.Add(client.ToEntity());
+                    }
+                    context.SaveChanges();
+                }
+
+                if (!context.IdentityResources.Any())
+                {
+                    foreach (var resource in Config.Config.GetIdentityResources())
+                    {
+                        context.IdentityResources.Add(resource.ToEntity());
+                    }
+                    context.SaveChanges();
+                }
+
+                if (!context.ApiResources.Any())
+                {
+                    foreach (var resource in Config.Config.GetApiResources())
+                    {
+                        context.ApiResources.Add(resource.ToEntity());
+                    }
+                    context.SaveChanges();
+                }
+
+                var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
+                if (!userManager.Users.Any())
+                {
+                    foreach (var user in Config.Config.GetUsers())
+                    {
+                        userManager.CreateAsync(new IdentityUser
+                        {
+                            UserName = user.Username,
+                            Email = user.Username
+                        }, user.Password);
+                    }
+
+                }
+            }
         }
     }
 }
