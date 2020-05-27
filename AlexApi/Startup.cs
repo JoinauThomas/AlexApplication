@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,9 +32,23 @@ namespace AlexApi
 
             services.AddIdentityServer()
                .AddDeveloperSigningCredential()
-               .AddInMemoryApiResources(Config.Config.GetApiResources())
-               .AddInMemoryClients(Config.Config.GetClients())
-               .AddTestUsers(Config.Config.GetUsers());
+               //.AddInMemoryApiResources(Config.Config.GetApiResources())
+               //.AddInMemoryClients(Config.Config.GetClients())
+               .AddTestUsers(Config.Config.GetUsers())
+               .AddConfigurationStore(options =>
+               {
+                   options.ConfigureDbContext = builder =>
+                       builder.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"),
+                       sql => sql.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name));
+               })
+                .AddOperationalStore(options =>
+                {
+                    options.ConfigureDbContext = builder =>
+                        builder.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"),
+                        sql => sql.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name));
+                    options.EnableTokenCleanup = true;
+                    options.TokenCleanupInterval = 30;
+                }); ;
 
             services.AddAuthorization();
 
