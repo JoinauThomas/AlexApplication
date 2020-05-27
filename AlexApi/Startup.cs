@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -31,6 +32,21 @@ namespace AlexApi
                .AddDeveloperSigningCredential()
                .AddInMemoryApiResources(Config.Config.GetApiResources())
                .AddInMemoryClients(Config.Config.GetClients());
+
+            services.AddAuthorization();
+
+            services.AddAuthentication(o =>
+            {
+                o.DefaultScheme = IdentityServerAuthenticationDefaults.AuthenticationScheme;
+                o.DefaultAuthenticateScheme = IdentityServerAuthenticationDefaults.AuthenticationScheme;
+            })
+                .AddIdentityServerAuthentication(options =>
+                {
+                    options.Authority = "https://localhost:5001";
+                    options.RequireHttpsMetadata = false;
+
+                    options.ApiName = "api1";
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
