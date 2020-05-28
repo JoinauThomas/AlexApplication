@@ -1,55 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
+﻿using AlexClient.Interfaces;
+using AlexClient.Models;
 using IdentityModel.Client;
-using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 
-namespace AlexClient.Controllers
+namespace AlexClient.Services
 {
-    public class TokenController : Controller
+    public class TokenService : ITokenService
     {
         private DiscoveryDocumentResponse disco = new DiscoveryDocumentResponse();
+        public TokenResponse tokenResponse { get; private set; }
 
-        [HttpGet]
-        public async Task<string> GetTokenAsync()
+        public async Task<TokenResponse> GetTokenAsync(LoginModel login)
         {
             var client = new HttpClient();
-            var token = await GetToken(client);
-            var refreshToken = await GetRefreshToken(client, token);
+            tokenResponse = await GetTokenAsync(client, login);
 
-            var tokenInJson = JsonConvert.SerializeObject(token);
-            var refreshTokenInJson = JsonConvert.SerializeObject(refreshToken);
-
-            string result = $"First Token : \n{tokenInJson}\n\n\nRefresh token :\n{refreshTokenInJson}";
-
-            return result;
+            return tokenResponse;
         }
-
-        [HttpGet]
-        public async Task<string> GetClaimsAsync()
+        public TokenResponse GetToken()
         {
-            var client = new HttpClient();
-            var token = await GetToken(client);
-            var claims = await GetClaims(token, client);
-
-            return claims;
+            return tokenResponse;
         }
-
-        private async Task<TokenResponse> GetToken(HttpClient client)
+        public async Task<TokenResponse> RefreshTokenAsync(HttpClient client, TokenResponse tokenResponse)
         {
-            
-            disco = await GetDiscoveryDocumentAsync(client);
-            var token = await GetTokenResponse(client);
-
-            return token;
-        }
-        private async Task<TokenResponse> GetRefreshToken(HttpClient client, TokenResponse tokenResponse)
-        {
-            var tokenResponseRefresh = await client.RequestRefreshTokenAsync(new RefreshTokenRequest
+            tokenResponse = await client.RequestRefreshTokenAsync(new RefreshTokenRequest
             {
                 Address = disco.TokenEndpoint,
                 ClientId = "client",
@@ -57,14 +35,30 @@ namespace AlexClient.Controllers
                 RefreshToken = tokenResponse.RefreshToken
             });
 
-            if (tokenResponseRefresh.IsError)
+            if (tokenResponse.IsError)
             {
-                Console.WriteLine(tokenResponseRefresh.Error);
+                Console.WriteLine(tokenResponse.Error);
                 return null;
             }
-            Console.WriteLine(tokenResponseRefresh.Json);
+            Console.WriteLine(tokenResponse.Json);
 
-            return tokenResponseRefresh;
+            return tokenResponse;
+        }
+        public async Task<string> GetClaimsAsync(TokenResponse token)
+        {
+            var client = new HttpClient();
+            var claims = await GetClaimsAsync(token, client);
+
+            return claims;
+        }
+
+
+        private async Task<TokenResponse> GetTokenAsync(HttpClient client, LoginModel login)
+        {
+            disco = await GetDiscoveryDocumentAsync(client);
+            var token = await GetTokenResponseAsync(client, login);
+
+            return token;
         }
         private async Task<DiscoveryDocumentResponse> GetDiscoveryDocumentAsync(HttpClient client)
         {
@@ -77,7 +71,7 @@ namespace AlexClient.Controllers
 
             return discoveryDoc;
         }
-        private async Task<TokenResponse> GetTokenResponse(HttpClient client)
+        private async Task<TokenResponse> GetTokenResponseAsync(HttpClient client, LoginModel login)
         {
             var tokenResponse = await client.RequestPasswordTokenAsync(new PasswordTokenRequest
             {
@@ -85,12 +79,12 @@ namespace AlexClient.Controllers
                 ClientId = "client",
                 ClientSecret = "secret",
 
-                UserName = "thomasjoinau@gmail.com",
-                Password = "Thom262900.",
+                UserName = login.Email,
+                Password = login.Password,
 
                 Scope = "api1 offline_access"
             });
-            if(tokenResponse.IsError)
+            if (tokenResponse.IsError)
             {
                 Console.WriteLine(tokenResponse.Error);
                 return null;
@@ -99,7 +93,7 @@ namespace AlexClient.Controllers
 
             return tokenResponse;
         }
-        private async Task<string> GetClaims(TokenResponse token, HttpClient client)
+        private async Task<string> GetClaimsAsync(TokenResponse token, HttpClient client)
         {
             client.SetBearerToken(token.AccessToken);
 

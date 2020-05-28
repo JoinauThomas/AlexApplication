@@ -137,21 +137,6 @@ namespace AlexApi
                     }
                     context.SaveChanges();
                 }
-
-                var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-
-                if (!userManager.Users.Any())
-                {
-                    foreach (var user in Config.Config.GetUsers())
-                    {
-                        userManager.CreateAsync(new IdentityUser
-                        {
-                            UserName = user.Username,
-                            Email = user.Username
-                        }, user.Password);
-                    }
-
-                }
             }
         }
     }
